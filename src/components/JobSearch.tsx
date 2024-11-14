@@ -13,16 +13,20 @@ import {
     CircularProgress,
     Typography,
 } from '@mui/material';
-import { Job, fetchSeekJobs, fetchIndeedJobs } from '../utils/JobUtils';
+import { SeekJob } from '../utils/Seek';
+import { IndeedJob } from '../utils/Indeed';
+import { fetchSeekJobs, fetchIndeedJobs } from '../utils/JobUtils';
 
 interface JobSearchProps { }
+
+type Job = SeekJob | IndeedJob;
 
 const JobSearch: React.FC<JobSearchProps> = () => {
     const [seekUrl, setSeekUrl] = useState('');
     const [indeedUrl, setIndeedUrl] = useState('');
     const [numPages, setNumPages] = useState(30);
-    const [seekJobs, setSeekJobs] = useState<Job[]>([]);
-    const [indeedJobs, setIndeedJobs] = useState<Job[]>([]);
+    const [seekJobs, setSeekJobs] = useState<SeekJob[]>([]);
+    const [indeedJobs, setIndeedJobs] = useState<IndeedJob[]>([]);
     const [seekLoading, setSeekLoading] = useState(false);
     const [indeedLoading, setIndeedLoading] = useState(false);
     const [seekError, setSeekError] = useState<string | null>(null);
@@ -49,6 +53,7 @@ const JobSearch: React.FC<JobSearchProps> = () => {
         setIndeedError(null);
         try {
             const fetchedJobs = await fetchIndeedJobs(indeedUrl, numPages);
+            console.log(fetchedJobs);
             setIndeedJobs(fetchedJobs);
         } catch (err: any) {
             setIndeedError(err.message);
@@ -94,8 +99,22 @@ const JobSearch: React.FC<JobSearchProps> = () => {
                             <TableRow key={job.id}>
                                 <TableCell>{job.title}</TableCell>
                                 <TableCell>{job.company}</TableCell>
-                                <TableCell>{job.workType}</TableCell>
-                                <TableCell>{job.location}</TableCell>
+                                {/* Indeed Worktype */}
+                                {'workType' in job && (
+                                    <TableCell>{job.workType}</TableCell>
+                                )}
+                                {/* Seek Worktypes */}
+                                {'workTypes' in job && (
+                                    <TableCell>{job.workTypes.join(", ")}</TableCell>
+                                )}
+                                {/* Indeed Location */}
+                                {'location' in job && (
+                                    <TableCell>{job.location}</TableCell>
+                                )}
+                                {/* Seek Locations */}
+                                {'locations' in job && (
+                                    <TableCell>{job.locations.map(i => i.label).join(", ")}</TableCell>
+                                )}
                                 <TableCell>{job.listed}</TableCell>
                             </TableRow>
                         ))}

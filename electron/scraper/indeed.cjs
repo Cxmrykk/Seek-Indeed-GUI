@@ -1,7 +1,7 @@
 const { Builder } = require('selenium-webdriver');
 
 module.exports = (app, ipcMain) => {
-  ipcMain.handle('fetch-jobs-seek', async (event, seekUrl, numPages) => {
+  ipcMain.handle('fetch-jobs-indeed', async (event, indeedUrl, numPages) => {
     let jobs = [];
     let driver;
 
@@ -10,38 +10,48 @@ module.exports = (app, ipcMain) => {
       .usingServer('http://localhost:9515')
       .withCapabilities({
         'goog:chromeOptions': {
-          // Here is the path to your Electron binary.
           binary: app.getPath('exe'),
         }
       })
       .forBrowser('chrome')
       .build()
 
-      for (let page = 1; page <= numPages; page++) {
-        await driver.get(`${seekUrl}&page=${page}`);
+      for (let page = 0; page < numPages * 10; page += 10) {
+        await driver.get(`${indeedUrl}&start=${page}`);
         const html = await driver.getPageSource();
-        const pattern = /window\.SEEK_REDUX_DATA = (\{[^\n]+\});\n/;
-        const match = html.match(pattern);
+        const scriptPattern = /window\.mosaic\.providerData\["mosaic-provider-jobcards"\]=(\{.+?\});/;
+        const scriptMatch = html.match(scriptPattern);
 
-        if (match) {
-          const jsonText = match[1].replace(/"(.*?)":\s*undefined/g, '"$1": null');
-          const data = JSON.parse(jsonText.trim());
+        if (scriptMatch) {
+          const jsonBlob = JSON.parse(scriptMatch[1]);
+          const jobsList = jsonBlob.metaData.mosaicProviderJobCardsModel.results;
 
-          for (const job of data.results.results.jobs) {
-            const listingDate = new Date(job.listingDate);
-            const now = new Date();
-            const timeDifference = Math.floor((now - listingDate) / (1000 * 60 * 60 * 24));
+          for (const job of jobsList) {
+            if (job.jobkey) {
+              let dateObj;
+              try {
+                const timestampMs = parseInt(job.pubDate, 10);
+                dateObj = new Date(timestampMs);
+              } catch (error) {
+                try {
+                  dateObj = new Date(job.pubDate);
+                } catch (error) {
+                  dateObj = new Date(); // Fallback to current date if parsing fails
+                }
+              }
+              const timeDifference = Math.floor((new Date() - dateObj) / (1000 * 60 * 60 * 24));
+              const listedDate = `${timeDifference} Days Ago`;
 
-            jobs.push({
-              id: job.id,
-              title: job.title,
-              company: job.advertiser.description,
-              workType: job.workType,
-              location: job.suburb || job.area,
-              listed: `${timeDifference} Days Ago`,
-              source: "Seek",
-              url: `https://seek.com.au/job/${job.id}`
-            });
+              jobs.push({
+                ...job,
+                id: job.jobkey,
+                workType: job.jobTypes ? job.jobTypes.join(', ') : '',
+                location: `${job.jobLocationCity}, ${job.jobLocationState}`,
+                listed: listedDate,
+                source: "Indeed",
+                url: `https://www.indeed.com/m/basecamp/viewjob?viewtype=embedded&jk=${job.jobkey}`
+              });
+            }
           }
         }
       }
@@ -57,4 +67,4 @@ module.exports = (app, ipcMain) => {
 
     return jobs;
   });
-};
+}
