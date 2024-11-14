@@ -1,5 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
-  fetchJobs: (seekUrl, indeedUrl, numPages) => ipcRenderer.invoke('fetch-jobs', seekUrl, indeedUrl, numPages)
+    fetchSeekJobs: (seekUrl, numPages) => ipcRenderer.invoke('fetch-jobs-seek', seekUrl, numPages),
+    fetchIndeedJobs: (indeedUrl, numPages) => ipcRenderer.invoke('fetch-jobs-indeed', indeedUrl, numPages)
 });

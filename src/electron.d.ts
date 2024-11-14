@@ -1,5 +1,6 @@
 interface Window {
   electron: {
-    fetchJobs: (seekUrl: string, indeedUrl: string, numPages: number) => Promise<import('./utils/JobUtils').Job[]>;
+      fetchSeekJobs: (seekUrl: string, numPages: number) => Promise<import('./utils/JobUtils').Job[]>;
+      fetchIndeedJobs: (indeedUrl: string, numPages: number) => Promise<import('./utils/JobUtils').Job[]>;
   };
 }
