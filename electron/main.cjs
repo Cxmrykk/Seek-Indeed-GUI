@@ -17,6 +17,7 @@ async function createWindow() {
   });
 
   win.setMenuBarVisibility(false);
+  win.maximize();
 
   const isDev = !app.isPackaged;
 
