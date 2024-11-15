@@ -3,44 +3,96 @@ import {
     Box,
     TextField,
     Button,
-    TableContainer,
-    Table,
-    TableHead,
-    TableRow,
-    TableCell,
-    TableBody,
-    Paper,
     CircularProgress,
     Typography,
+    Tabs,
+    Tab,
 } from '@mui/material';
+import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import { SeekJob } from '../utils/Seek';
 import { IndeedJob } from '../utils/Indeed';
 import { fetchSeekJobs, fetchIndeedJobs } from '../utils/JobUtils';
 
 interface JobSearchProps { }
 
-type Job = SeekJob | IndeedJob;
+type SeekJobDisplay = {
+    id: string,
+    title: string,
+    company: string,
+    workTypes: string,
+    locations: string,
+    listingDate: Date
+}
+
+type IndeedJobDisplay = {
+    id: string,
+    title: string,
+    company: string,
+    workType: string,
+    location: string,
+    createDate: Date
+}
+
+const seekColumns: GridColDef[] = [
+    { field: 'title', headerName: 'Job' },
+    { field: 'company', headerName: 'Company' },
+    { field: 'workTypes', headerName: 'Type' },
+    { field: 'locations', headerName: 'Location' },
+    { field: 'listingDate', headerName: 'Date', type: 'dateTime' },
+];
+
+const indeedColumns: GridColDef[] = [
+    { field: 'title', headerName: 'Job' },
+    { field: 'company', headerName: 'Company' },
+    { field: 'workType', headerName: 'Type' },
+    { field: 'location', headerName: 'Location' },
+    { field: 'createDate', headerName: 'Date', type: 'dateTime' },
+];
+
+
+const formatSeekJob: (job: SeekJob) => SeekJobDisplay = (job) => {
+    return {
+        id: job.id,
+        title: job.title,
+        company: job.company,
+        workTypes: job.workTypes.join(", "),
+        locations: job.locations.map(i => i.label).join(", "),
+        listingDate: new Date(job.listingDate)
+    };
+};
+
+const formatIndeedJob: (job: IndeedJob) => IndeedJobDisplay = (job) => {
+    return {
+        id: job.id,
+        title: job.title,
+        company: job.company,
+        workType: job.workType,
+        location: job.location,
+        createDate: new Date(job.createDate)
+    };
+};
+
+const paginationModel = { page: 0, pageSize: 15 };
 
 const JobSearch: React.FC<JobSearchProps> = () => {
+    const [currentTab, setCurrentTab] = useState(0);
     const [seekUrl, setSeekUrl] = useState('');
     const [indeedUrl, setIndeedUrl] = useState('');
     const [numPages, setNumPages] = useState(30);
-    const [seekJobs, setSeekJobs] = useState<SeekJob[]>([]);
-    const [indeedJobs, setIndeedJobs] = useState<IndeedJob[]>([]);
+    const [seekJobs, setSeekJobs] = useState<SeekJobDisplay[]>([]);
+    const [indeedJobs, setIndeedJobs] = useState<IndeedJobDisplay[]>([]);
     const [seekLoading, setSeekLoading] = useState(false);
     const [indeedLoading, setIndeedLoading] = useState(false);
     const [seekError, setSeekError] = useState<string | null>(null);
     const [indeedError, setIndeedError] = useState<string | null>(null);
-    const [seekFilterText, setSeekFilterText] = useState('');
-    const [indeedFilterText, setIndeedFilterText] = useState('');
-
 
     const handleSeekSearch = async () => {
         setSeekLoading(true);
         setSeekError(null);
         try {
             const fetchedJobs = await fetchSeekJobs(seekUrl, numPages);
-            setSeekJobs(fetchedJobs);
+            const jobsFormatted = fetchedJobs.map(job => formatSeekJob(job));
+            setSeekJobs(jobsFormatted);
         } catch (err: any) {
             setSeekError(err.message);
         } finally {
@@ -53,8 +105,8 @@ const JobSearch: React.FC<JobSearchProps> = () => {
         setIndeedError(null);
         try {
             const fetchedJobs = await fetchIndeedJobs(indeedUrl, numPages);
-            console.log(fetchedJobs);
-            setIndeedJobs(fetchedJobs);
+            const jobsFormatted = fetchedJobs.map(job => formatIndeedJob(job));
+            setIndeedJobs(jobsFormatted);
         } catch (err: any) {
             setIndeedError(err.message);
         } finally {
@@ -62,116 +114,112 @@ const JobSearch: React.FC<JobSearchProps> = () => {
         }
     };
 
-    const filteredSeekJobs = seekJobs.filter((job) =>
-        job.title.toLowerCase().includes(seekFilterText.toLowerCase())
-    );
-
-    const filteredIndeedJobs = indeedJobs.filter((job) =>
-        job.title.toLowerCase().includes(indeedFilterText.toLowerCase())
-    );
-
-
-    const renderJobTable = (jobs: Job[], filterText: string, setFilterText: (text: string) => void, loading: boolean, error: string | null, title: string) => (
+    const renderJobTable = (columns: GridColDef[], rows: object[], loading: boolean, error: string | null) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <Typography variant="h6" component="h2" gutterBottom>{title}</Typography>
-            <TextField
-                label="Filter"
-                value={filterText}
-                onChange={(e) => setFilterText(e.target.value)}
-                fullWidth
-                margin="normal"
-            />
             {loading && <CircularProgress sx={{ marginTop: '20px' }} />}
             {error && <Typography color="error" sx={{ marginTop: '10px' }}>{error}</Typography>}
-            <TableContainer component={Paper} sx={{ flexGrow: 1, marginTop: '20px', overflowY: 'auto' }}>
-                <Table stickyHeader aria-label="job results">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell>Title</TableCell>
-                            <TableCell>Company</TableCell>
-                            <TableCell>Work Type</TableCell>
-                            <TableCell>Location</TableCell>
-                            <TableCell>Listed</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {jobs.filter((job) => job.title.toLowerCase().includes(filterText.toLowerCase())).map((job) => (
-                            <TableRow key={job.id}>
-                                <TableCell>{job.title}</TableCell>
-                                <TableCell>{job.company}</TableCell>
-                                {/* Indeed Worktype */}
-                                {'workType' in job && (
-                                    <TableCell>{job.workType}</TableCell>
-                                )}
-                                {/* Seek Worktypes */}
-                                {'workTypes' in job && (
-                                    <TableCell>{job.workTypes.join(", ")}</TableCell>
-                                )}
-                                {/* Indeed Location */}
-                                {'location' in job && (
-                                    <TableCell>{job.location}</TableCell>
-                                )}
-                                {/* Seek Locations */}
-                                {'locations' in job && (
-                                    <TableCell>{job.locations.map(i => i.label).join(", ")}</TableCell>
-                                )}
-                                <TableCell>{job.listed}</TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+            <DataGrid
+                rows={rows}
+                columns={columns}
+                initialState={{ pagination: { paginationModel } }}
+                pageSizeOptions={[5, 10, 15]}
+                autosizeOnMount={true}
+                autosizeOptions={{ expand: true }}
+                sx={{ border: 0 }}
+            />
         </Box>
     );
 
+    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+        setCurrentTab(newValue);
+    };
+
     return (
-        <Box sx={{ display: 'flex', height: 'calc(100vh - 40px)', padding: '20px' }}>
-            <Box sx={{ display: 'flex', width: '50%', flexDirection: 'column', pr: 1 }}>
-                <TextField
-                    label="Seek URL"
-                    value={seekUrl}
-                    onChange={(e) => setSeekUrl(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                />
-                <TextField
-                    label="Number of Pages"
-                    type="number"
-                    value={numPages}
-                    onChange={(e) => setNumPages(parseInt(e.target.value, 10))}
-                    fullWidth
-                    margin="normal"
-                />
-                <Button variant="contained" onClick={handleSeekSearch} disabled={seekLoading} sx={{ marginTop: '10px' }}>
-                    Search Seek
-                </Button>
-                <Box sx={{ flexGrow: 1, mt: 2, overflow: 'hidden' }}>
-                    {renderJobTable(filteredSeekJobs, seekFilterText, setSeekFilterText, seekLoading, seekError, "Seek Results")}
+        <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', padding: '20px' }}>
+            <Tabs value={currentTab} onChange={handleTabChange} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tab label="Seek" />
+                <Tab label="Indeed" />
+            </Tabs>
+
+            {currentTab === 0 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, mt: 2 }}>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: 2,
+                        alignItems: 'center'
+                    }}>
+                        <TextField
+                            label="Seek URL"
+                            value={seekUrl}
+                            onChange={(e) => setSeekUrl(e.target.value)}
+                            sx={{ flex: 2 }}
+                        />
+                        <TextField
+                            label="Number of Pages"
+                            type="number"
+                            value={numPages}
+                            onChange={(e) => setNumPages(parseInt(e.target.value, 10))}
+                            sx={{ flex: 2 }}
+                        />
+                        <Button
+                            variant="contained"
+                            onClick={handleSeekSearch}
+                            disabled={seekLoading}
+                            sx={{
+                                flex: 1,
+                                height: 56,
+                                mt: '0px'
+                            }}
+                        >
+                            Search Seek
+                        </Button>
+                    </Box>
+                    <Box sx={{ flexGrow: 1, mt: 2, overflow: 'hidden' }}>
+                        {renderJobTable(seekColumns, seekJobs, seekLoading, seekError)}
+                    </Box>
                 </Box>
-            </Box>
-            <Box sx={{ display: 'flex', width: '50%', flexDirection: 'column', pl: 1 }}>
-                <TextField
-                    label="Indeed URL"
-                    value={indeedUrl}
-                    onChange={(e) => setIndeedUrl(e.target.value)}
-                    fullWidth
-                    margin="normal"
-                />
-                <TextField
-                    label="Number of Pages"
-                    type="number"
-                    value={numPages}
-                    onChange={(e) => setNumPages(parseInt(e.target.value, 10))}
-                    fullWidth
-                    margin="normal"
-                />
-                <Button variant="contained" onClick={handleIndeedSearch} disabled={indeedLoading} sx={{ marginTop: '10px' }}>
-                    Search Indeed
-                </Button>
-                <Box sx={{ flexGrow: 1, mt: 2, overflow: 'hidden' }}>
-                    {renderJobTable(filteredIndeedJobs, indeedFilterText, setIndeedFilterText, indeedLoading, indeedError, "Indeed Results")}
+            )}
+
+            {currentTab === 1 && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', flexGrow: 1, mt: 2 }}>
+                    <Box sx={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: 2,
+                        alignItems: 'center'
+                    }}>
+                        <TextField
+                            label="Indeed URL"
+                            value={indeedUrl}
+                            onChange={(e) => setIndeedUrl(e.target.value)}
+                            sx={{ flex: 2 }}
+                        />
+                        <TextField
+                            label="Number of Pages"
+                            type="number"
+                            value={numPages}
+                            onChange={(e) => setNumPages(parseInt(e.target.value, 10))}
+                            sx={{ flex: 2 }}
+                        />
+                        <Button
+                            variant="contained"
+                            onClick={handleIndeedSearch}
+                            disabled={indeedLoading}
+                            sx={{
+                                flex: 1,
+                                height: 56,
+                                mt: '0px'
+                            }}
+                        >
+                            Search Indeed
+                        </Button>
+                    </Box>
+                    <Box sx={{ flexGrow: 1, mt: 2, overflow: 'hidden' }}>
+                        {renderJobTable(indeedColumns, indeedJobs, indeedLoading, indeedError)}
+                    </Box>
                 </Box>
-            </Box>
+            )}
         </Box>
     );
 };
