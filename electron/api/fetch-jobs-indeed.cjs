@@ -53,7 +53,6 @@ module.exports = (app, ipcMain) => {
 
     } catch (err) {
       console.error('Error during scraping:', err);
-      throw err;
     } finally {
       if (driver) {
         await driver.quit();
