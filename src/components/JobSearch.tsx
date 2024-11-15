@@ -93,7 +93,19 @@ const JobSearch: React.FC<JobSearchProps> = () => {
         setSeekError(null);
         try {
             const fetchedJobs = await fetchSeekJobs(seekUrl, numPages);
-            const jobsFormatted = fetchedJobs.map(job => formatSeekJob(job));
+            // Filter duplicate entries
+            const jobSet = new Set<string>();
+            const jobsFormatted = fetchedJobs
+                .map(job => formatSeekJob(job))
+                .filter(job => {
+                    if (jobSet.has(job.id)) {
+                        return false;
+                    }
+
+                    jobSet.add(job.id);
+                    return true;
+                });
+
             setSeekJobs(jobsFormatted);
         } catch (err: any) {
             setSeekError(err.message);
@@ -107,7 +119,17 @@ const JobSearch: React.FC<JobSearchProps> = () => {
         setIndeedError(null);
         try {
             const fetchedJobs = await fetchIndeedJobs(indeedUrl, numPages);
-            const jobsFormatted = fetchedJobs.map(job => formatIndeedJob(job));
+            const jobSet = new Set<string>();
+            const jobsFormatted = fetchedJobs
+                .map(job => formatIndeedJob(job))
+                .filter(job => {
+                    if (jobSet.has(job.id)) {
+                        return false;
+                    }
+
+                    jobSet.add(job.id);
+                    return true;
+                });
             setIndeedJobs(jobsFormatted);
         } catch (err: any) {
             setIndeedError(err.message);
