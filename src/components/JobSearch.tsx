@@ -34,11 +34,11 @@ type IndeedJobDisplay = {
 }
 
 const seekColumns: GridColDef[] = [
-    { field: 'title', headerName: 'Job' },
-    { field: 'company', headerName: 'Company' },
-    { field: 'workTypes', headerName: 'Type' },
-    { field: 'locations', headerName: 'Location' },
-    { field: 'listingDate', headerName: 'Date', type: 'dateTime' },
+    { field: 'title', headerName: 'Job', minWidth: 360 },
+    { field: 'company', headerName: 'Company', minWidth: 240 },
+    { field: 'workTypes', headerName: 'Type', minWidth: 180 },
+    { field: 'locations', headerName: 'Location', minWidth: 180 },
+    { field: 'listingDate', headerName: 'Date', type: 'dateTime', minWidth: 240 },
 ];
 
 const indeedColumns: GridColDef[] = [
@@ -53,8 +53,9 @@ const indeedColumns: GridColDef[] = [
 const formatSeekJob: (job: SeekJob) => SeekJobDisplay = (job) => {
     return {
         id: job.id,
+        url: job.url,
         title: job.title,
-        company: job.company,
+        company: job.advertiser.description,
         workTypes: job.workTypes.join(", "),
         locations: job.locations.map(i => i.label).join(", "),
         listingDate: new Date(job.listingDate)
@@ -63,11 +64,12 @@ const formatSeekJob: (job: SeekJob) => SeekJobDisplay = (job) => {
 
 const formatIndeedJob: (job: IndeedJob) => IndeedJobDisplay = (job) => {
     return {
-        id: job.id,
+        id: job.jobkey,
+        url: job.url,
         title: job.title,
         company: job.company,
-        workType: job.workType,
-        location: job.location,
+        workType: job.jobTypes.join(", "),
+        location: job.jobLocationCity + ", " + job.jobLocationState,
         createDate: new Date(job.createDate)
     };
 };
@@ -114,21 +116,31 @@ const JobSearch: React.FC<JobSearchProps> = () => {
         }
     };
 
-    const renderJobTable = (columns: GridColDef[], rows: object[], loading: boolean, error: string | null) => (
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            {loading && <CircularProgress sx={{ marginTop: '20px' }} />}
-            {error && <Typography color="error" sx={{ marginTop: '10px' }}>{error}</Typography>}
-            <DataGrid
-                rows={rows}
-                columns={columns}
-                initialState={{ pagination: { paginationModel } }}
-                pageSizeOptions={[5, 10, 15]}
-                autosizeOnMount={true}
-                autosizeOptions={{ expand: true }}
-                sx={{ border: 0 }}
-            />
-        </Box>
-    );
+    const renderJobTable = (columns: GridColDef[], rows: object[], loading: boolean, error: string | null) => {
+        const handleRowDoubleClick = (params: any) => {
+            if (params.row.url) {
+                window.electron.openExternal(params.row.url);
+            }
+        };
+
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                {loading && <CircularProgress sx={{ marginTop: '20px' }} />}
+                {error && <Typography color="error" sx={{ marginTop: '10px' }}>{error}</Typography>}
+                <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    initialState={{ pagination: { paginationModel } }}
+                    pageSizeOptions={[5, 10, 15]}
+                    autosizeOnMount={true}
+                    autosizeOptions={{ expand: true }}
+                    sx={{ border: 0 }}
+                    onRowDoubleClick={handleRowDoubleClick}
+                    disableRowSelectionOnClick={true}
+                />
+            </Box>
+        );
+    };
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setCurrentTab(newValue);

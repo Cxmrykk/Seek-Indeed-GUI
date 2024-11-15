@@ -2,8 +2,9 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 
 // Load the scraper endpoints
-require("./scraper/seek.cjs")(app, ipcMain);
-require("./scraper/indeed.cjs")(app, ipcMain);
+require("./api/fetch-jobs-seek.cjs")(app, ipcMain);
+require("./api/fetch-jobs-indeed.cjs")(app, ipcMain);
+require("./api/open-external.cjs")(app, ipcMain);
 
 async function createWindow() {
   const win = new BrowserWindow({

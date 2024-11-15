@@ -44,11 +44,6 @@ module.exports = (app, ipcMain) => {
 
               jobs.push({
                 ...job,
-                id: job.jobkey,
-                workType: job.jobTypes ? job.jobTypes.join(', ') : '',
-                location: `${job.jobLocationCity}, ${job.jobLocationState}`,
-                listed: listedDate,
-                source: "Indeed",
                 url: `https://www.indeed.com/m/basecamp/viewjob?viewtype=embedded&jk=${job.jobkey}`
               });
             }

@@ -33,10 +33,6 @@ module.exports = (app, ipcMain) => {
 
             jobs.push({
               ...job,
-              company: job.advertiser.description,
-              location: job.suburb || job.area,
-              listed: `${timeDifference} Days Ago`,
-              source: "Seek",
               url: `https://seek.com.au/job/${job.id}`
             });
           }
