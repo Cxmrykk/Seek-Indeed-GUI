@@ -42,11 +42,11 @@ const seekColumns: GridColDef[] = [
 ];
 
 const indeedColumns: GridColDef[] = [
-    { field: 'title', headerName: 'Job' },
-    { field: 'company', headerName: 'Company' },
-    { field: 'workType', headerName: 'Type' },
-    { field: 'location', headerName: 'Location' },
-    { field: 'createDate', headerName: 'Date', type: 'dateTime' },
+    { field: 'title', headerName: 'Job', minWidth: 360 },
+    { field: 'company', headerName: 'Company', minWidth: 240 },
+    { field: 'workType', headerName: 'Type', minWidth: 180 },
+    { field: 'location', headerName: 'Location', minWidth: 180 },
+    { field: 'createDate', headerName: 'Date', type: 'dateTime', minWidth: 240 },
 ];
 
 
@@ -132,8 +132,6 @@ const JobSearch: React.FC<JobSearchProps> = () => {
                     columns={columns}
                     initialState={{ pagination: { paginationModel } }}
                     pageSizeOptions={[5, 10, 15]}
-                    autosizeOnMount={true}
-                    autosizeOptions={{ expand: true }}
                     sx={{ border: 0 }}
                     onRowDoubleClick={handleRowDoubleClick}
                     disableRowSelectionOnClick={true}
