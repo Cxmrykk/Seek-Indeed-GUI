@@ -13,6 +13,11 @@
 - For now you will need to build the executable yourself (see below)
 
 ### Building/Testing
+
+- Install these dependencies:
+  + [Bun](https://bun.sh/docs/installation)
+  + [Node.js](https://nodejs.org/en/download/prebuilt-installer)
+
 ```sh
 # Install required dependencies from NPM
 bun install
