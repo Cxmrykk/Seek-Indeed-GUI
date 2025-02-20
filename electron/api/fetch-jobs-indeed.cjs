@@ -1,4 +1,4 @@
-const { Builder } = require('selenium-webdriver');
+const { Builder, until } = require('selenium-webdriver');
 
 module.exports = (app, ipcMain) => {
   ipcMain.handle('fetch-jobs-indeed', async (event, indeedUrl, numPages) => {
@@ -15,6 +15,26 @@ module.exports = (app, ipcMain) => {
       })
       .forBrowser('chrome')
       .build()
+
+      // Try loading the home page first (captcha check)
+      await driver.get("https://au.indeed.com");
+
+      // Scrape the page source to detect captcha
+      const html = await driver.getPageSource();
+      const cloudFlarePattern = /<h1>Additional Verification Required<\/h1>/;
+      const cloudFlareMatch = html.match(cloudFlarePattern);
+
+      // wait until the page updates (captcha completed)
+      if (cloudFlareMatch) {
+        console.log("Captcha detected");
+        const initialUrl = await driver.getCurrentUrl();
+
+        // Wait for the URL to change
+        await driver.wait(async () => {
+          const currentUrl = await driver.getCurrentUrl();
+          return currentUrl !== initialUrl;
+        });
+      }
 
       for (let page = 0; page < numPages * 10; page += 10) {
         await driver.get(`${indeedUrl}&start=${page}`);
